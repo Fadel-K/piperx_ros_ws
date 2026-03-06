@@ -1,6 +1,6 @@
 # Topics
 
-## joint_states
+## /joint_states
 
 Can publish to this topic to control the robot arm in joint position.
 Type:
@@ -18,3 +18,25 @@ Example: ros2 topic pub /joint_states sensor_msgs/msg/JointState "{header: {stam
 Note: 
 in velocity, only last element controls the total speed % of the whole trajector, similar to the SDK
 Effort at the end is the amount of effort in Nm for the gripper. Range: [0-5].
+
+## /pos_cmd
+
+
+### piper_msgs/msg/PosCmd Message
+
+/* meters */
+float64 x
+float64 y
+float64 z
+
+/* radians */
+float64 roll
+float64 pitch
+float64 yaw
+
+/* meters */
+float64 gripper
+
+/* invalid */
+int32 mode1
+int32 mode2
