@@ -3,11 +3,11 @@ moveit_setup_assistant_config:
     package: piper_x_description
     relative_path: urdf/piper_x_description.xacro
   srdf:
-    relative_path: config/piper.srdf
+    relative_path: config/piper_x_camera.srdf
   package_settings:
     author_name: Fadel Kandapath
-    author_email: 12345678@qq.com
-    generated_timestamp: 1740382720
+    author_email: informfadel@gmail.com
+    generated_timestamp: 1772816366
   control_xacro:
     command:
       - position

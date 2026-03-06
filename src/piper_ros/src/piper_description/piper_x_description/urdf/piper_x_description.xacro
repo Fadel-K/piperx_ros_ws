@@ -4,13 +4,13 @@
      For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="piper_x_camera">
 
-  <link name="world"/>
+  <!-- <link name="world"/>
 
   <joint name="world_to_base" type="fixed">
     <parent link="world"/>
     <child link="base_link"/>
     <origin xyz="0 0 0" rpy="0 0 0"/>
-  </joint>
+  </joint> -->
 
 <!-- <xacro:include filename="$(find realsense2_description)/urdf/test_d435_camera.urdf.xacro" /> -->
   <link
@@ -371,8 +371,8 @@
     <axis
       xyz="0 0 1" />
     <limit
-      lower="-3.14"
-      upper="3.14"
+      lower="-1.57"
+      upper="1.57"
       effort="100"
       velocity="10" />
   </joint>

@@ -1,4 +1,4 @@
-# Default initial positions for piper's ros2_control fake system
+# Default initial positions for piper_x_camera's ros2_control fake system
 
 initial_positions:
   joint1: 0

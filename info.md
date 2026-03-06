@@ -40,3 +40,11 @@ float64 gripper
 /* invalid */
 int32 mode1
 int32 mode2
+
+## MoveIt
+![alt text](image-1.png)
+
+Not sure what this does and how it affects things
+
+### Errors
+Right now gripper defined by chain link -> maybe change to joint definitions
