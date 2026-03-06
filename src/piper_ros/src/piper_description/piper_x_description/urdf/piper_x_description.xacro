@@ -4,7 +4,15 @@
      For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="piper_x_camera">
 
-<xacro:include filename="$(find realsense2_description)/urdf/test_d435_camera.urdf.xacro" />
+  <link name="world"/>
+
+  <joint name="world_to_base" type="fixed">
+    <parent link="world"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+<!-- <xacro:include filename="$(find realsense2_description)/urdf/test_d435_camera.urdf.xacro" /> -->
   <link
     name="base_link">
   <inertial>
@@ -494,7 +502,7 @@
         <limit lower="-0.05" upper="0" effort="100" velocity="1" />
     </joint>
 
-    <link name="camera_stand_link">
+    <!-- <link name="camera_stand_link">
         <inertial>
             <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
             <mass value="0.0"/>
@@ -512,8 +520,8 @@
                 <mesh filename="package://piper_description/meshes/dae/realsense_mid_stand.dae" />
             </geometry>
         </collision>
-    </link>
-    <joint name="camera_stand_joint" type="fixed">
+    </link> -->
+    <!-- <joint name="camera_stand_joint" type="fixed">
         <origin xyz="0.001 -0.036 0.022" rpy="1.57 3.14 0.0"/>
         <parent link="link6"/>
         <child link="camera_stand_link"/>
@@ -527,7 +535,7 @@
         <child link="d435_camera_link"/>
         <axis xyz="0.0 0.0 0.0"/>
         <limit lower="0.0" upper="0.0" effort="0.0" velocity="0.0"/>
-    </joint>
+    </joint> -->
 
 
 

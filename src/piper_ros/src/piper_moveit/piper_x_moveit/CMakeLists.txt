@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(piper_with_gripper_moveit)
+project(piper_x_moveit)
 
 find_package(ament_cmake REQUIRED)
 

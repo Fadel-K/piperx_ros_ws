@@ -540,7 +540,7 @@
         <axis xyz="0 0 1" />
         <limit lower="-0.05" upper="0" effort="100" velocity="1" />
     </joint>
-  <link name="camera_stand_link">
+  <!-- <link name="camera_stand_link">
     <inertial>
       <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       <mass value="0.0"/>
@@ -558,7 +558,7 @@
         <mesh filename="package://piper_x_description/meshes/dae/realsense_mid_stand.dae"/>
       </geometry>
     </collision>
-  </link>
+  </link> -->
   <joint name="camera_stand_joint" type="fixed">
     <origin rpy="1.57 3.14 0.0" xyz="0.001 -0.036 0.022"/>
     <parent link="gripper_base"/>

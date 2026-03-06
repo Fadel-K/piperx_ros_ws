@@ -3,7 +3,7 @@
     <xacro:arg name="initial_positions_file" default="initial_positions.yaml" />
 
     <!-- Import piper urdf file -->
-    <xacro:include filename="$(find piper_description)/urdf/piper_description.xacro" />
+    <xacro:include filename="$(find piper_x_description)/urdf/piper_x_description.xacro" />
 
     <!-- Import control_xacro -->
     <xacro:include filename="piper.ros2_control.xacro" />

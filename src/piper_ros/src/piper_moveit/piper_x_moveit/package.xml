@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>piper_with_gripper_moveit</name>
+  <name>piper_x_moveit</name>
   <version>0.3.0</version>
   <description>
      An automatically generated package with all the configuration and launch files for using the piper with the MoveIt Motion Planning Framework
@@ -36,7 +36,7 @@
   <exec_depend>moveit_ros_visualization</exec_depend>
   <exec_depend>moveit_ros_warehouse</exec_depend>
   <exec_depend>moveit_setup_assistant</exec_depend>
-  <exec_depend>piper_description</exec_depend>
+  <exec_depend>piper_x_description</exec_depend>
   <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>rviz2</exec_depend>
   <exec_depend>rviz_common</exec_depend>
