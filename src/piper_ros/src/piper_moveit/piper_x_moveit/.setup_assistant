@@ -3,7 +3,7 @@ moveit_setup_assistant_config:
     package: piper_x_description
     relative_path: urdf/piper_x_description.xacro
   srdf:
-    relative_path: config/piper.srdf
+    relative_path: config/piper_x.srdf
   package_settings:
     author_name: Fadel Kandapath
     author_email: 12345678@qq.com
