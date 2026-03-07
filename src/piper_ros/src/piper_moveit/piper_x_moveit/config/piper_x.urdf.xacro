@@ -9,6 +9,6 @@
     <xacro:include filename="piper_x.ros2_control.xacro" />
 
 
-    <xacro:piper_ros2_control name="FakeSystem" initial_positions_file="$(arg initial_positions_file)"/>
+    <xacro:piper_x_ros2_control name="FakeSystem" initial_positions_file="$(arg initial_positions_file)"/>
 
 </robot>

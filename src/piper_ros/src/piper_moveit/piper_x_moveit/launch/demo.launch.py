@@ -9,5 +9,5 @@ joint_state_publisher = Node(
 )
 
 def generate_launch_description():
-    moveit_config = MoveItConfigsBuilder("piper", package_name="piper_x_moveit").to_moveit_configs()
+    moveit_config = MoveItConfigsBuilder("piper_x", package_name="piper_x_moveit").to_moveit_configs()
     return generate_demo_launch(moveit_config)

@@ -47,4 +47,4 @@ int32 mode2
 Not sure what this does and how it affects things
 
 ### Errors
-Right now gripper defined by chain link -> maybe change to joint definitions
+I think lack of definitions for the other joints and links like gripper base is why it doesnt work

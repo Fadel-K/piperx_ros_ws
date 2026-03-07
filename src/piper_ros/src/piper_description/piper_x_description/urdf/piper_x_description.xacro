@@ -2,15 +2,15 @@
 <!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
      Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
      For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="piper_x_camera">
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="piper_x">
 
-  <!-- <link name="world"/>
-
-  <joint name="world_to_base" type="fixed">
-    <parent link="world"/>
-    <child link="base_link"/>
-    <origin xyz="0 0 0" rpy="0 0 0"/>
-  </joint> -->
+  <!-- world -->
+  <link name="world"/>
+  <joint name="fixed_base_joint" type="fixed">
+      <parent link="world"/>
+      <child link="base_link"/>
+  </joint>
+<!-- arm -->
 
 <!-- <xacro:include filename="$(find realsense2_description)/urdf/test_d435_camera.urdf.xacro" /> -->
   <link
@@ -537,6 +537,28 @@
         <limit lower="0.0" upper="0.0" effort="0.0" velocity="0.0"/>
     </joint> -->
 
+  <!-- controller -->
+  <xacro:macro name="transmission_block" params="tran_name joint_name motor_name">
+    <transmission name="${tran_name}">
+        <type>transmission_interface/SimpleTransmission</type>
+        <joint name="${joint_name}">
+            <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+        </joint>
+        <actuator name="$motor_name">
+            <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+            <mechanicalReduction>1</mechanicalReduction>
+        </actuator>
+    </transmission>
+  </xacro:macro>
+
+  <xacro:transmission_block tran_name="tran1" joint_name="joint1" motor_name="motor1"/>
+  <xacro:transmission_block tran_name="tran2" joint_name="joint2" motor_name="motor2"/>
+  <xacro:transmission_block tran_name="tran3" joint_name="joint3" motor_name="motor3"/>
+  <xacro:transmission_block tran_name="tran4" joint_name="joint4" motor_name="motor4"/>
+  <xacro:transmission_block tran_name="tran5" joint_name="joint5" motor_name="motor5"/>
+  <xacro:transmission_block tran_name="tran6" joint_name="joint6" motor_name="motor6"/>
+  <xacro:transmission_block tran_name="tran7" joint_name="joint7" motor_name="motor7"/>
+  <xacro:transmission_block tran_name="tran8" joint_name="joint8" motor_name="motor8"/>
 
 
 </robot>
