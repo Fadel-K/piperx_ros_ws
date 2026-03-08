@@ -1,3 +1,9 @@
 [submodule "piper_ros"]
 	path = piper_ros
 	url = https://github.com/agilexrobotics/piper_ros.git
+[submodule "src/Quest2ROS2"]
+	path = src/Quest2ROS2
+	url = https://github.com/Taokt/Quest2ROS2.git
+[submodule "src/ros_tcp_communication"]
+	path = src/ros_tcp_communication
+	url = https://github.com/guguroro/ros_tcp_communication.git
