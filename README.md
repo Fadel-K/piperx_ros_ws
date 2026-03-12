@@ -48,3 +48,8 @@ Not sure what this does and how it affects things
 
 ### Errors
 I think lack of definitions for the other joints and links like gripper base is why it doesnt work
+
+# TODO
+Check out other IK solvers 
+Thread priority for servo
+C++ api for servo
