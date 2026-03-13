@@ -28,14 +28,47 @@ def generate_launch_description():
         .to_moveit_configs()
     )
 
-    demo_launch = IncludeLaunchDescription(
+    servo_yaml = load_yaml("piper_x_moveit", "config/piper_x_servo.yaml")
+    servo_params = {"moveit_servo": servo_yaml}
+
+    robot_state_publisher = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(package_dir, "launch", "rsp.launch.py"))
+    )
+
+    move_group = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(package_dir, "launch", "demo.launch.py")
+            os.path.join(package_dir, "launch", "move_group.launch.py")
         )
     )
 
-    servo_yaml = load_yaml("piper_x_moveit", "config/piper_x_servo.yaml")
-    servo_params = {"moveit_servo": servo_yaml}
+    rviz_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(package_dir, "launch", "moveit_rviz.launch.py")
+        )
+    )
+
+    static_tf = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        name="static_transform_publisher",
+        output="log",
+        arguments=["0", "0", "0", "0", "0", "0", "world", "base_link"],
+    )
+
+    ros2_controllers_path = os.path.join(package_dir, "config", "ros2_controllers.yaml")
+
+    ros2_control_node = Node(
+        package="controller_manager",
+        executable="ros2_control_node",
+        parameters=[moveit_config.robot_description, ros2_controllers_path],
+        output="screen",
+    )
+
+    spawn_controllers = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(package_dir, "launch", "spawn_controllers.launch.py")
+        )
+    )
 
     servo_node = Node(
         package="moveit_servo",
@@ -51,4 +84,14 @@ def generate_launch_description():
         ],
     )
 
-    return LaunchDescription([demo_launch, servo_node])
+    return LaunchDescription(
+        [
+            robot_state_publisher,
+            move_group,
+            rviz_node,
+            static_tf,
+            ros2_control_node,
+            spawn_controllers,
+            servo_node,
+        ]
+    )
