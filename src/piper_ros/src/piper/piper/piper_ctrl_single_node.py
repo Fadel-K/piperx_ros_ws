@@ -291,18 +291,35 @@ class PiperRosNode(Node):
         factor = 57324.840764  # 1000*180/3.14
         # self.get_logger().info(f"Received Joint States:")
 
+        if len(joint_data.name) != len(joint_data.position):
+            self.get_logger().warning(
+                "Ignoring joint command with mismatched name/position lengths."
+            )
+            return
+
         # 创建一个字典来存储关节名称与位置的映射
         joint_positions = {}
         joint_6 = 0
 
         # 遍历joint_data.name来映射位置
         for idx, joint_name in enumerate(joint_data.name):
-            self.get_logger().info(f"{joint_name}: {joint_data.position[idx]}")
-            joint_positions[joint_name] = round(joint_data.position[idx] * factor)
+            position = joint_data.position[idx]
+            if not math.isfinite(position):
+                self.get_logger().warning(
+                    f"Ignoring joint command because {joint_name} position is non-finite."
+                )
+                return
+            self.get_logger().info(f"{joint_name}: {position}")
+            joint_positions[joint_name] = round(position * factor)
         
         # 获取第7个关节的位置
         if len(joint_data.position) >= 7:
             # self.get_logger().info(f"joint_7: {joint_data.position[6]}")
+            if not math.isfinite(joint_data.position[6]):
+                self.get_logger().warning(
+                    "Ignoring joint command because gripper position is non-finite."
+                )
+                return
             joint_6 = round(joint_data.position[6] * 1000 * 1000)
             joint_6 = joint_6 * self.gripper_val_mutiple
 

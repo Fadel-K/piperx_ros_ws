@@ -1,5 +1,6 @@
 import rclpy
 from rclpy.node import Node
+from math import isfinite
 
 from sensor_msgs.msg import JointState
 from trajectory_msgs.msg import JointTrajectory
@@ -16,6 +17,7 @@ class PiperServoBridge(Node):
         "joint5",
         "joint6",
     ]
+    DEFAULT_MOVEIT_GRIPPER_JOINTS = ["joint7", "joint8"]
 
     def __init__(self):
         super().__init__("piper_servo_bridge")
@@ -25,6 +27,10 @@ class PiperServoBridge(Node):
         self.declare_parameter("hardware_state_topic", "joint_states_single")
         self.declare_parameter("moveit_state_topic", "/joint_states")
         self.declare_parameter("arm_joint_names", self.DEFAULT_ARM_JOINTS)
+        self.declare_parameter("hardware_gripper_joint_name", "gripper")
+        self.declare_parameter(
+            "moveit_gripper_joint_names", self.DEFAULT_MOVEIT_GRIPPER_JOINTS
+        )
 
         self.trajectory_topic = self.get_parameter(
             "trajectory_topic"
@@ -40,6 +46,14 @@ class PiperServoBridge(Node):
         ).get_parameter_value().string_value
         self.arm_joint_names = list(
             self.get_parameter("arm_joint_names").get_parameter_value().string_array_value
+        )
+        self.hardware_gripper_joint_name = self.get_parameter(
+            "hardware_gripper_joint_name"
+        ).get_parameter_value().string_value
+        self.moveit_gripper_joint_names = list(
+            self.get_parameter(
+                "moveit_gripper_joint_names"
+            ).get_parameter_value().string_array_value
         )
 
         self.joint_ctrl_single_publisher = self.create_publisher(
@@ -72,6 +86,13 @@ class PiperServoBridge(Node):
             )
         )
         self.get_logger().info("Arm joints: %s" % ", ".join(self.arm_joint_names))
+        self.get_logger().info(
+            "Gripper mapping: hardware '%s' -> %s"
+            % (
+                self.hardware_gripper_joint_name,
+                ", ".join(self.moveit_gripper_joint_names),
+            )
+        )
 
     def _filter_joint_values(self, joint_names, values):
         """Return configured arm joints in configured order."""
@@ -110,12 +131,32 @@ class PiperServoBridge(Node):
             )
             return
 
+        if not all(isfinite(position) for position in filtered_positions):
+            self.get_logger().warning(
+                "Trajectory contained non-finite arm joint positions; ignoring."
+            )
+            return
+
         joint_state = JointState()
         joint_state.header.stamp = self.get_clock().now().to_msg()
         joint_state.name = filtered_names
         joint_state.position = filtered_positions
 
         self.joint_ctrl_single_publisher.publish(joint_state)
+
+    def _extract_gripper_position(self, joint_names, positions):
+        if not positions:
+            return 0.0
+
+        for idx, joint_name in enumerate(joint_names):
+            if (
+                joint_name == self.hardware_gripper_joint_name
+                and idx < len(positions)
+                and isfinite(positions[idx])
+            ):
+                return positions[idx]
+
+        return 0.0
 
     def joint_states_single_callback(self, msg: JointState):
         """Republish Piper feedback as MoveIt's /joint_states input."""
@@ -129,18 +170,32 @@ class PiperServoBridge(Node):
             )
             return
 
+        gripper_position = self._extract_gripper_position(msg.name, msg.position)
+        moveit_names = filtered_names + self.moveit_gripper_joint_names
+        moveit_positions = filtered_positions + [gripper_position, -gripper_position]
+
         moveit_joint_state = JointState()
-        moveit_joint_state.header = msg.header
-        moveit_joint_state.name = filtered_names
-        moveit_joint_state.position = filtered_positions
+        moveit_joint_state.header.stamp = self.get_clock().now().to_msg()
+        moveit_joint_state.header.frame_id = msg.header.frame_id
+        moveit_joint_state.name = moveit_names
+        moveit_joint_state.position = moveit_positions
 
         if len(msg.velocity) == len(msg.name):
             _, filtered_velocities = self._filter_joint_values(msg.name, msg.velocity)
-            moveit_joint_state.velocity = filtered_velocities
+            moveit_joint_state.velocity = filtered_velocities + [0.0, 0.0]
 
         if len(msg.effort) == len(msg.name):
             _, filtered_efforts = self._filter_joint_values(msg.name, msg.effort)
-            moveit_joint_state.effort = filtered_efforts
+            gripper_effort = 0.0
+            for idx, joint_name in enumerate(msg.name):
+                if (
+                    joint_name == self.hardware_gripper_joint_name
+                    and idx < len(msg.effort)
+                    and isfinite(msg.effort[idx])
+                ):
+                    gripper_effort = msg.effort[idx]
+                    break
+            moveit_joint_state.effort = filtered_efforts + [gripper_effort, gripper_effort]
 
         self.joint_states_publisher.publish(moveit_joint_state)
 
