@@ -1,97 +1,161 @@
 import os
-import yaml
+import launch
+import launch_ros
 
 from ament_index_python.packages import get_package_share_directory
-from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch_ros.actions import Node
+from launch.conditions import IfCondition, UnlessCondition
+from launch.substitutions import LaunchConfiguration
+from launch_param_builder import ParameterBuilder
 from moveit_configs_utils import MoveItConfigsBuilder
 
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 
-def load_yaml(package_name, file_path):
+
+def load_yaml(file_path, package_name = "piper_x_moveit"):
     package_path = get_package_share_directory(package_name)
     absolute_file_path = os.path.join(package_path, file_path)
 
-    try:
-        with open(absolute_file_path, "r") as file:
-            return yaml.safe_load(file)
-    except EnvironmentError:
-        return None
-
+    return absolute_file_path
 
 def generate_launch_description():
-    package_dir = get_package_share_directory("piper_x_moveit")
-
+    
     moveit_config = (
         MoveItConfigsBuilder("piper_x", package_name="piper_x_moveit")
+        .robot_description(file_path=load_yaml("config/piper_x.urdf.xacro"))
+        .joint_limits(file_path=load_yaml("config/joint_limits.yaml"))
         .to_moveit_configs()
     )
 
-    servo_yaml = load_yaml("piper_x_moveit", "config/piper_x_servo.yaml")
-    servo_params = {"moveit_servo": servo_yaml}
-
-    robot_state_publisher = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(package_dir, "launch", "rsp.launch.py"))
+    # Launch Servo as a standalone node or as a "node component" for better latency/efficiency
+    launch_as_standalone_node = LaunchConfiguration(
+        "launch_as_standalone_node", default="false"
     )
 
+    # Get parameters for the Servo node
+    servo_params = {
+        "moveit_servo": ParameterBuilder("moveit_servo")
+        .yaml(load_yaml("config/piper_x_servo.yaml"))
+        .to_dict()
+    }
+
+    # This sets the update rate and planning group name for the acceleration limiting filter.
+    acceleration_filter_update_period = {"update_period": 0.01}
+    planning_group_name = {"planning_group_name": "arm"}
+
+    #Move_Group - Fadel
     move_group = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(package_dir, "launch", "move_group.launch.py")
+            os.path.join(get_package_share_directory("piper_x_moveit"), "launch", "move_group.launch.py")
         )
     )
-
+    
+    # RViz - Fadel
     rviz_node = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(package_dir, "launch", "moveit_rviz.launch.py")
+            os.path.join(get_package_share_directory("piper_x_moveit"), "launch", "moveit_rviz.launch.py")
         )
     )
 
-    static_tf = Node(
-        package="tf2_ros",
-        executable="static_transform_publisher",
-        name="static_transform_publisher",
-        output="log",
-        arguments=["0", "0", "0", "0", "0", "0", "world", "base_link"],
+    ros2_controllers_path = os.path.join(
+        get_package_share_directory("piper_x_moveit"),
+        "config",
+        "ros2_controllers.yaml",
     )
-
-    ros2_controllers_path = os.path.join(package_dir, "config", "ros2_controllers.yaml")
-
-    ros2_control_node = Node(
+    ros2_control_node = launch_ros.actions.Node(
         package="controller_manager",
         executable="ros2_control_node",
-        parameters=[moveit_config.robot_description, ros2_controllers_path],
+        parameters=[ros2_controllers_path],
+        remappings=[
+            ("/controller_manager/robot_description", "/robot_description"),
+        ],
         output="screen",
     )
 
-    spawn_controllers = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(package_dir, "launch", "spawn_controllers.launch.py")
-        )
+    joint_state_broadcaster_spawner = launch_ros.actions.Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=[
+            "joint_state_broadcaster",
+            "--controller-manager-timeout",
+            "300",
+            "--controller-manager",
+            "/controller_manager",
+        ],
     )
 
-    servo_node = Node(
+    controller_spawner = launch_ros.actions.Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["arm_controller", "-c", "/controller_manager"],
+    )
+
+    # Launch as much as possible in components
+    container = launch_ros.actions.ComposableNodeContainer(
+        name="moveit_servo_demo_container",
+        namespace="/",
+        package="rclcpp_components",
+        executable="component_container_mt",
+        composable_node_descriptions=[
+            # Example of launching Servo as a node component
+            # Launching as a node component makes ROS 2 intraprocess communication more efficient.
+            launch_ros.descriptions.ComposableNode(
+                package="moveit_servo",
+                plugin="moveit_servo::ServoNode",
+                name="servo_node",
+                parameters=[
+                    servo_params,
+                    acceleration_filter_update_period,
+                    planning_group_name,
+                    moveit_config.robot_description,
+                    moveit_config.robot_description_semantic,
+                    moveit_config.robot_description_kinematics,
+                    moveit_config.joint_limits,
+                ],
+                condition=UnlessCondition(launch_as_standalone_node),
+            ),
+            launch_ros.descriptions.ComposableNode(
+                package="robot_state_publisher",
+                plugin="robot_state_publisher::RobotStatePublisher",
+                name="robot_state_publisher",
+                parameters=[moveit_config.robot_description],
+            ),
+            launch_ros.descriptions.ComposableNode(
+                package="tf2_ros",
+                plugin="tf2_ros::StaticTransformBroadcasterNode",
+                name="static_tf2_broadcaster",
+                parameters=[{"child_frame_id": "/base_link", "frame_id": "/world"}],
+            ),
+        ],
+        output="screen",
+    )
+    # Launch a standalone Servo node.
+    # As opposed to a node component, this may be necessary (for example) if Servo is running on a different PC
+    servo_node = launch_ros.actions.Node(
         package="moveit_servo",
-        executable="servo_node_main",
+        executable="servo_node",
         name="servo_node",
-        output="screen",
         parameters=[
             servo_params,
+            acceleration_filter_update_period,
+            planning_group_name,
             moveit_config.robot_description,
             moveit_config.robot_description_semantic,
             moveit_config.robot_description_kinematics,
             moveit_config.joint_limits,
         ],
+        output="screen",
+        condition=IfCondition(launch_as_standalone_node),
     )
-
-    return LaunchDescription(
+    
+    return launch.LaunchDescription(
         [
-            robot_state_publisher,
             move_group,
             rviz_node,
-            static_tf,
             ros2_control_node,
-            spawn_controllers,
+            joint_state_broadcaster_spawner,
+            controller_spawner,
             servo_node,
+            container, #servo_node, robot_state_publisher, static_tf
         ]
     )
